@@ -58,6 +58,8 @@ from megatron.data.dataset_utils import analyze_data_prefix
 
 import deepspeed
 
+from copy import deepcopy
+
 
 def print_datetime(string):
     """Note that this call will sync across all ranks."""
@@ -422,12 +424,15 @@ def setup_model_and_optimizer(model_provider_func):
         if args.universal_checkpoint:
             config["checkpoint"] = {"load_universal": True}
 
+        ds_args = deepcopy(args)
+        del ds_args.deepspeed_config
+
         model, optimizer, _, lr_scheduler = deepspeed.initialize(
             model=model[0],
             optimizer=optimizer,
             lr_scheduler=lr_scheduler,
             config=config,
-            args=args,
+            args=ds_args,
         )
 
         assert model.fp16_enabled() == args.fp16, "megatron fp16 config does not match deepspeed"
